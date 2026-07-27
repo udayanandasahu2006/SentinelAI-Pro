@@ -6,8 +6,8 @@ import Sidebar from "./components/Sidebar";
 import Dashboard from "./pages/Dashboard";
 import Predict from "./pages/Predict";
 import History from "./pages/History";
-import Webcam from "./pages/Webcam";
-import VideoDetection from "./pages/VideoDetection";
+import Webcam from "./pages/webcam";
+import VideoDetection from "./pages/videodetection";
 
 export default function App() {
   return (
