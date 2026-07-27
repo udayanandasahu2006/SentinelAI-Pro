@@ -1,37 +1,47 @@
-# 🛰️ SentinelAI Pro
+# 🛰️ SentinelAI-Pro
 
-An AI-powered Border Surveillance System that detects potential threats using YOLOv8 and provides real-time monitoring through a modern web dashboard.
+AI Powered Border Surveillance System using YOLOv8, FastAPI, React, Material UI and PostgreSQL.
+
+---
+
+## 📌 Overview
+
+SentinelAI-Pro is an AI-based surveillance system designed to detect suspicious objects or threats from images, videos and live webcam feeds.
+
+The system uses YOLOv8 for object detection and provides a modern dashboard for monitoring surveillance activity.
 
 ---
 
 ## 🚀 Features
 
-- 🛰️ AI-powered object detection (YOLOv8)
-- 📸 Image detection
-- 🎥 Live webcam detection
-- 📹 Video detection
-- 📊 Interactive dashboard
-- 📈 Detection history
-- 📄 PDF report generation
-- 🌙 Dark / Light theme
-- 📱 Responsive design
+- AI Image Detection
+- Live Webcam Detection
+- Video Detection
+- Detection History
+- Threat Dashboard
+- PDF Report Generation
+- Dark / Light Theme
+- Real-Time Statistics
+- PostgreSQL Database
+- REST API using FastAPI
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠 Tech Stack
 
 ### Frontend
+
 - React.js
-- Vite
 - Material UI
-- Recharts
 - Axios
+- React Router
+- Recharts
 
 ### Backend
+
 - FastAPI
 - Python
 - YOLOv8 (Ultralytics)
-- OpenCV
 - SQLAlchemy
 - PostgreSQL
 
@@ -39,18 +49,22 @@ An AI-powered Border Surveillance System that detects potential threats using YO
 
 ## 📂 Project Structure
 
-```text
 SentinelAI-Pro/
-├── backend/
+│
 ├── frontend/
+├── backend/
 ├── README.md
-├── .gitignore
-└── .env.example
-```
+└── .gitignore
 
 ---
 
-## ⚙️ Installation
+## ⚙ Installation
+
+### Clone Repository
+
+```bash
+git clone https://github.com/udayanandasahu2006/SentinelAI-Pro.git
+```
 
 ### Frontend
 
@@ -70,36 +84,46 @@ uvicorn app.main:app --reload
 
 ---
 
-## 🌐 API Documentation
+## 📊 Dashboard
 
-After starting the backend:
+The dashboard provides
 
-```
-http://127.0.0.1:8000/docs
-```
+- Total Scans
+- Threat Detection
+- Safe Images
+- Average Confidence
+- AI Incident Summary
+- Live Threat Alerts
+- Detection History
+- Mission Progress
 
 ---
 
 ## 📸 Screenshots
 
-Add screenshots of:
+### Dashboard
 
-- Dashboard
-- Image Detection
-- Webcam Detection
-- Video Detection
-- History Page
+(Add screenshot)
+
+### Detection
+
+(Add screenshot)
+
+### History
+
+(Add screenshot)
 
 ---
 
-## 🔮 Future Enhancements
+## 🔮 Future Improvements
 
-- Drone integration
-- Multi-camera support
-- SMS/Email alerts
-- GPS tracking
-- Cloud deployment
-- Mobile application
+- Drone Camera Integration
+- GPS Tracking
+- Email Alerts
+- SMS Alerts
+- Face Recognition
+- Multi Camera Support
+- Cloud Deployment
 
 ---
 
@@ -107,6 +131,13 @@ Add screenshots of:
 
 **Udayananda Sahu**
 
-B.Tech – Electronics & Telecommunication Engineering
+Electronics & Telecommunication Engineering
 
-AI & VLSI Enthusiast
+Artificial Intelligence • Computer Vision • VLSI Enthusiast
+
+GitHub:
+https://github.com/udayanandasahu2006
+
+---
+
+## ⭐ Star this repository if you like this project.
