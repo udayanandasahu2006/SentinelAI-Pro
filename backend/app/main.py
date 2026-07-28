@@ -10,6 +10,8 @@ from app.routers.dashboard import router as dashboard_router
 from app.routers.video import router as video_router
 from app.routers.webcam import router as webcam_router
 from app.routers.report import router as report_router
+from app.database.database import engine
+from app.database.models import Base
 
 app = FastAPI(
     title="SentinelAI-Pro API",
@@ -47,3 +49,5 @@ app.include_router(dashboard_router)
 app.include_router(video_router)
 app.include_router(webcam_router)
 app.include_router(report_router)
+# Create database tables
+Base.metadata.create_all(bind=engine)
