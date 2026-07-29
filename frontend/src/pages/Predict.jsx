@@ -96,14 +96,17 @@ export default function Predict() {
     }
 
     catch(error){
+    console.log("FULL ERROR:", error);
 
-      console.log(error);
-
-      alert(
-        "Prediction failed"
-      );
-
+    if (error.response) {
+        console.log("Status:", error.response.status);
+        console.log("Data:", error.response.data);
+        alert(JSON.stringify(error.response.data));
+    } else {
+        console.log(error.message);
+        alert(error.message);
     }
+}
 
 
     finally{
