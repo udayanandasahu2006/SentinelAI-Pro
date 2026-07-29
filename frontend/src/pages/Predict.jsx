@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
+import API from "../api";
 
 import {
   Container,
@@ -79,24 +79,15 @@ export default function Predict() {
       setLoading(true);
 
 
-      const response=await axios.post(
-
-        "http://127.0.0.1:8000/prediction/predict",
-
-        formData,
-
-        {
-
-          headers:{
-
-            "Content-Type":
-            "multipart/form-data"
-
-          }
-
+      const response = await API.post(
+    "/prediction/predict",
+    formData,
+    {
+        headers: {
+            "Content-Type": "multipart/form-data"
         }
-
-      );
+    }
+);
 
 
       setResult(response.data);
