@@ -68,32 +68,31 @@ export default function Dashboard() {
   };
 
   const loadStats = async () => {
-    try {
-      const res = await API.get("/dashboard/stats");
-      setStats(res.data);
-    } catch (err) {
-      console.log(err);
-    }
-  };
+  try {
+    const res = await API.get("/dashboard/stats");
+    setStats(res.data);
+  } catch (err) {
+    console.error("Dashboard Error:", err);
+  }
+};
 
   useEffect(() => {
+  loadStats();
 
+  const timer = setInterval(() => {
     loadStats();
+  }, 5000);
 
-    const timer = setInterval(() => {
-      loadStats();
-    }, 5000);
-
-    return () => clearInterval(timer);
-
-  }, []);
+  return () => clearInterval(timer);
+}, []);
 
   const downloadReport = () => {
-    window.open(
-      "http://127.0.0.1:8000/report/generate",
-      "_blank"
-    );
-  };
+  window.open(
+    "https://sentinelai-pro.onrender.com/report/generate",
+    "_blank"
+  );
+};
+
 
   if (!stats) {
     return (
