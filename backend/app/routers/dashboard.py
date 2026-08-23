@@ -10,27 +10,87 @@ router = APIRouter(
     tags=["Dashboard"]
 )
 
+
+# Objects that SentinelAI Pro considers threats
+THREAT_OBJECTS = {
+    "gun",
+    "pistol",
+    "rifle",
+    "weapon",
+    "knife",
+    "firearm",
+    "explosive",
+    "bomb",
+    "tank",
+    "soldier"
+}
+
+
 @router.get("/stats")
 def get_stats(db: Session = Depends(get_db)):
 
+    # -----------------------------------------
+    # Total detections
+    # -----------------------------------------
+
     total = db.query(Prediction).count()
 
-    threats = db.query(Prediction).filter(
-        Prediction.prediction != "No Threat Detected"
-    ).count()
+    # -----------------------------------------
+    # Get all predictions
+    # -----------------------------------------
 
-    safe = total - threats
+    predictions = (
+        db.query(Prediction.prediction)
+        .all()
+    )
+
+    # -----------------------------------------
+    # Count threats
+    # -----------------------------------------
+
+    threats = 0
+
+    for item in predictions:
+
+        prediction = str(
+            item[0] or ""
+        ).strip().lower()
+
+        if prediction in THREAT_OBJECTS:
+            threats += 1
+
+    # -----------------------------------------
+    # Safe detections
+    # -----------------------------------------
+
+    safe = max(
+        total - threats,
+        0
+    )
+
+    # -----------------------------------------
+    # Average confidence
+    # -----------------------------------------
 
     avg = db.query(
         func.avg(Prediction.confidence)
     ).scalar()
 
     if avg is None:
-        avg = 0
+        avg = 0.0
+
+    # -----------------------------------------
+    # Response
+    # -----------------------------------------
 
     return {
+
         "total_predictions": total,
+
         "threats_detected": threats,
+
         "safe_images": safe,
+
         "average_confidence": float(avg)
+
     }

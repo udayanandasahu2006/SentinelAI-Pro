@@ -8,9 +8,9 @@ import {
   Typography,
   Box,
   Divider,
-  Button
+  Button,
+  IconButton
 } from "@mui/material";
-
 
 import {
   Dashboard,
@@ -19,9 +19,9 @@ import {
   History,
   CameraAlt,
   Logout,
-  Security
+  Security,
+  Dns
 } from "@mui/icons-material";
-
 
 import { NavLink, useNavigate } from "react-router-dom";
 
@@ -29,11 +29,7 @@ import { useContext } from "react";
 
 import { AuthContext } from "../context/AuthContext";
 
-
-import { IconButton } from "@mui/material";
-
 import DarkModeIcon from "@mui/icons-material/DarkMode";
-
 import LightModeIcon from "@mui/icons-material/LightMode";
 
 import { useTheme } from "@mui/material/styles";
@@ -42,429 +38,352 @@ import { ColorModeContext } from "../context/ThemeContext";
 
 const drawerWidth = 240;
 
+export default function Sidebar() {
 
+  const { user, logout } =
+    useContext(AuthContext);
 
-export default function Sidebar(){
+  const navigate = useNavigate();
 
+  const theme = useTheme();
 
-const {user, logout}=useContext(AuthContext);
+  const colorMode =
+    useContext(ColorModeContext);
 
+  // --------------------------------------------------
+  // MENU
+  // --------------------------------------------------
 
-const navigate = useNavigate();
+  const menu = [
 
+    {
+      name: "Dashboard",
+      path: "/",
+      icon: <Dashboard />
+    },
 
+    {
+      name: "Image Detection",
+      path: "/predict",
+      icon: <ImageSearch />
+    },
 
-const menu=[
+    {
+      name: "Webcam Detection",
+      path: "/webcam",
+      icon: <CameraAlt />
+    },
 
-{
-name:"Dashboard",
-path:"/",
-icon:<Dashboard/>
-},
+    {
+      name: "Video Detection",
+      path: "/video",
+      icon: <Videocam />
+    },
 
-{
-name:"Image Detection",
-path:"/predict",
-icon:<ImageSearch/>
-},
+  
 
-{
-name:"Webcam Detection",
-path:"/webcam",
-icon:<CameraAlt/>
-},
+    {
+      name: "History",
+      path: "/history",
+      icon: <History />
+    },
+    
+  ];
 
-{
-name:"Video Detection",
-path:"/video",
-icon:<Videocam/>
-},
+  // --------------------------------------------------
+  // LOGOUT
+  // --------------------------------------------------
 
-{
-name:"History",
-path:"/history",
-icon:<History/>
-}
+  const handleLogout = () => {
 
-];
+    logout();
 
+    navigate("/login");
 
+  };
 
-const handleLogout=()=>{
+  return (
 
+    <Drawer
 
-logout();
+      variant="permanent"
 
+      sx={{
 
-navigate("/login");
+        width: drawerWidth,
 
+        flexShrink: 0,
 
-};
+        "& .MuiDrawer-paper": {
 
-const theme = useTheme();
+          width: drawerWidth,
 
-const colorMode = useContext(ColorModeContext);
+          boxSizing: "border-box",
 
+          background:
+            "linear-gradient(180deg,#0f172a,#020617)",
 
-return(
+          color: "white",
 
+          borderRight:
+            "1px solid #1e293b"
 
-<Drawer
+        }
 
+      }}
 
-variant="permanent"
+    >
 
+      {/* ================================================= */}
+      {/* HEADER */}
+      {/* ================================================= */}
 
-sx={{
+      <Box
+        sx={{
+          textAlign: "center",
+          p: 2
+        }}
+      >
 
-width:drawerWidth,
+        <Security
+          sx={{
+            fontSize: 45,
+            color: "#38bdf8"
+          }}
+        />
 
+        <Typography
+          variant="h6"
+          fontWeight="bold"
+        >
+          SentinelAI Pro
+        </Typography>
 
-"& .MuiDrawer-paper":{
+        <Typography
+          variant="caption"
+          sx={{
+            color: "#94a3b8"
+          }}
+        >
+          AI Border Surveillance
+        </Typography>
 
-width:drawerWidth,
+      </Box>
 
-boxSizing:"border-box",
+      <Divider
+        sx={{
+          background: "#475569"
+        }}
+      />
 
-background:
-"linear-gradient(180deg,#0f172a,#020617)",
+      {/* ================================================= */}
+      {/* MENU */}
+      {/* ================================================= */}
 
-color:"white"
+      <List sx={{ px: 1 }}>
 
-}
+        {menu.map((item) => (
 
-}}
+          <ListItem
+            key={item.name}
+            disablePadding
+            sx={{ mb: 0.5 }}
+          >
 
+            <ListItemButton
 
+              component={NavLink}
 
->
+              to={item.path}
 
+              sx={{
 
-{/* Header */}
+                color: "white",
 
+                borderRadius: 2,
 
-<Box
+                minHeight: 48,
 
-sx={{
+                "&.active": {
 
-textAlign:"center",
+                  background:
+                    "linear-gradient(90deg,#0284c7,#0369a1)",
 
-p:2
+                  boxShadow:
+                    "0 4px 12px rgba(2,132,199,0.3)"
 
-}}
+                },
 
->
+                "&:hover": {
 
+                  background:
+                    "#1e293b"
 
-<Security
+                }
 
-sx={{
+              }}
 
-fontSize:45,
+            >
 
-color:"#38bdf8"
+              <ListItemIcon
+                sx={{
+                  color: "white",
+                  minWidth: 42
+                }}
+              >
 
-}}
+                {item.icon}
 
-/>
+              </ListItemIcon>
 
+              <ListItemText
+                primary={item.name}
+              />
 
+            </ListItemButton>
 
-<Typography
+          </ListItem>
 
-variant="h6"
+        ))}
 
-fontWeight="bold"
+      </List>
 
->
+      
 
-SentinelAI Pro
+      {/* ================================================= */}
+      {/* BOTTOM USER SECTION */}
+      {/* ================================================= */}
 
-</Typography>
+      <Box
 
+        sx={{
 
+          position: "absolute",
 
-<Typography
+          bottom: 15,
 
-variant="caption"
+          width: "100%",
 
->
+          px: 2,
 
-AI Border Surveillance
+          boxSizing: "border-box"
 
-</Typography>
+        }}
 
+      >
 
-</Box>
+        <Divider
+          sx={{
+            mb: 2,
+            background: "#475569"
+          }}
+        />
 
+        <Typography
+          variant="body2"
+        >
+          👤 Logged User
+        </Typography>
 
+        <Typography
+          variant="caption"
+          sx={{
+            wordBreak: "break-word",
+            color: "#94a3b8"
+          }}
+        >
 
+          {user?.email || "User"}
 
-<Divider
+        </Typography>
 
-sx={{
+        {/* ================================================= */}
+        {/* LOGOUT */}
+        {/* ================================================= */}
 
-background:"#475569"
+        <Button
 
-}}
+          fullWidth
 
-/>
+          variant="contained"
 
+          color="error"
 
+          startIcon={<Logout />}
 
+          sx={{
+            mt: 2
+          }}
 
-{/* Menu */}
+          onClick={handleLogout}
 
+        >
 
-<List>
+          Logout
 
+        </Button>
 
-{
+        {/* ================================================= */}
+        {/* THEME */}
+        {/* ================================================= */}
 
-menu.map((item)=>(
+        <Box
+          sx={{
+            textAlign: "center",
+            mt: 1
+          }}
+        >
 
+          <Typography
+            variant="caption"
+            sx={{
+              color: "white",
+              display: "block",
+              mb: 0.5
+            }}
+          >
+            Theme
+          </Typography>
 
-<ListItem
+          <IconButton
 
-key={item.name}
+            onClick={
+              colorMode.toggleColorMode
+            }
 
-disablePadding
+            sx={{
 
->
+              color: "white",
 
+              transition:
+                "all 0.5s",
 
-<ListItemButton
+              "&:hover": {
 
+                transform:
+                  "rotate(180deg) scale(1.2)"
 
-component={NavLink}
+              }
 
+            }}
 
-to={item.path}
+          >
 
+            {theme.palette.mode === "dark"
 
+              ? <LightModeIcon />
 
-sx={{
+              : <DarkModeIcon />
 
-color:"white",
+            }
 
+          </IconButton>
 
-"&.active":{
+        </Box>
 
-background:"#0284c7",
+      </Box>
 
-borderRadius:2
+    </Drawer>
 
-},
-
-
-"&:hover":{
-
-background:"#1e293b"
-
-}
-
-}}
-
-
-
->
-
-
-<ListItemIcon
-
-sx={{
-
-color:"white"
-
-}}
-
->
-
-{item.icon}
-
-</ListItemIcon>
-
-
-
-<ListItemText
-
-primary={item.name}
-
-/>
-
-
-
-</ListItemButton>
-
-
-</ListItem>
-
-
-))
-
-
-}
-
-
-
-</List>
-
-
-
-
-
-
-
-{/* Bottom User Section */}
-
-
-<Box
-
-
-sx={{
-
-position:"absolute",
-
-bottom:20,
-
-width:"100%",
-
-px:2
-
-}}
-
-
-
->
-
-
-<Divider
-
-sx={{
-
-mb:2,
-
-background:"#475569"
-
-}}
-
-/>
-
-
-
-<Typography
-
-variant="body2"
-
->
-
-👤 Logged User
-
-</Typography>
-
-
-
-<Typography
-
-variant="caption"
-
-sx={{
-
-wordBreak:"break-word"
-
-}}
-
->
-
-{user?.email || "User"}
-
-</Typography>
-
-
-
-
-<Button
-
-
-fullWidth
-
-
-variant="contained"
-
-
-color="error"
-
-
-startIcon={<Logout/>}
-
-
-
-sx={{
-
-mt:2
-
-}}
-
-
-
-onClick={handleLogout}
-
-
-
->
-
-
-Logout
-
-
-</Button>
-<Box
-  sx={{
-    textAlign: "center",
-    mt: 2
-  }}
->
-
-  <Typography
-    variant="caption"
-    sx={{
-      color: "white",
-      display: "block",
-      mb: 1
-    }}
-  >
-    Theme
-  </Typography>
-
-  <IconButton
-    onClick={colorMode.toggleColorMode}
-    sx={{
-      color: "white",
-      transition: "all 0.5s",
-      "&:hover": {
-        transform: "rotate(180deg) scale(1.2)"
-      }
-    }}
-  >
-
-    {theme.palette.mode === "dark"
-      ? <LightModeIcon />
-      : <DarkModeIcon />
-    }
-
-  </IconButton>
-
-</Box>
-
-
-
-</Box>
-
-
-
-</Drawer>
-
-
-);
-
+  );
 }

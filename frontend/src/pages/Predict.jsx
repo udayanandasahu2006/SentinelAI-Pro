@@ -78,15 +78,9 @@ export default function Predict() {
 
       setLoading(true);
 
-
-      const response = await API.post(
-    "/prediction/predict",
-    formData,
-    {
-        headers: {
-            "Content-Type": "multipart/form-data"
-        }
-    }
+const response = await API.post(
+  "/prediction/predict",
+  formData
 );
 
 

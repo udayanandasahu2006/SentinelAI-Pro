@@ -10,6 +10,8 @@ import Webcam from "./pages/webcam";
 import VideoDetection from "./pages/videodetection";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Cameras from "./pages/Cameras";
+
 
 export default function App() {
   const location = useLocation();
@@ -41,6 +43,11 @@ export default function App() {
           <Route path="/webcam" element={<Webcam />} />
           <Route path="/video" element={<VideoDetection />} />
           <Route path="/history" element={<History />} />
+          
+<Route
+    path="/cameras"
+    element={<Cameras />}
+/>
         </Routes>
       </Box>
     </Box>

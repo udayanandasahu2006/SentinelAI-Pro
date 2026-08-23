@@ -11,11 +11,12 @@ import {
   LinearProgress,
   Box,
   CircularProgress,
-  Chip
+  Chip,
+  TextField,
+  MenuItem
 } from "@mui/material";
 
 export default function Webcam() {
-
   const processingRef = useRef(false);
 
   const videoRef = useRef(null);
@@ -26,50 +27,198 @@ export default function Webcam() {
 
   const [cameraOn, setCameraOn] = useState(false);
   const [loading, setLoading] = useState(false);
-
   const [result, setResult] = useState(null);
 
   const [threatLevel, setThreatLevel] = useState("SAFE");
 
-  const playAlarm = () => {
+  const [siren, setSiren] = useState(false);
+  const [sirenReason, setSirenReason] = useState("");
 
+  // Camera source
+  const [cameraSource, setCameraSource] = useState("local");
+
+  // IP camera URL
+  const [ipCameraUrl, setIpCameraUrl] = useState("");
+
+  // --------------------------------------------------
+  // ALARM
+  // --------------------------------------------------
+
+  const playAlarm = () => {
     const alarm = alarmRef.current;
 
     alarm.loop = true;
     alarm.volume = 1;
 
     if (alarm.paused) {
-
-      alarm.play().catch(err => {
-
+      alarm.play().catch((err) => {
         console.log("Alarm Error:", err);
-
       });
-
     }
 
+    setSiren(true);
   };
 
   const stopAlarm = () => {
-
     const alarm = alarmRef.current;
 
     alarm.pause();
-
     alarm.currentTime = 0;
 
+    setSiren(false);
   };
 
-  const startCamera = async () => {
+  // --------------------------------------------------
+  // CHECK WHETHER PERSON IS AUTHORIZED
+  // --------------------------------------------------
 
+  const isAuthorizedPerson = (data) => {
+    // Backend can directly return this field
+    if (data.authorized === true) {
+      return true;
+    }
+
+    if (data.authorized_person === true) {
+      return true;
+    }
+
+    if (data.person_status === "authorized") {
+      return true;
+    }
+
+    if (
+      typeof data.authorization === "string" &&
+      data.authorization.toLowerCase() === "authorized"
+    ) {
+      return true;
+    }
+
+    if (
+      typeof data.status === "string" &&
+      data.status.toLowerCase() === "authorized"
+    ) {
+      return true;
+    }
+
+    return false;
+  };
+
+  // --------------------------------------------------
+  // DETERMINE THREAT
+  // --------------------------------------------------
+
+  const processThreat = (data) => {
+    const prediction =
+      data.prediction?.toString().toLowerCase() || "";
+
+    const confidence =
+      Number(data.confidence) || 0;
+
+    const authorized = isAuthorizedPerson(data);
+
+    // -----------------------------------------------
+    // PERSON
+    // -----------------------------------------------
+
+    if (
+      prediction === "person" ||
+      prediction === "authorized person" ||
+      prediction === "unauthorized person"
+    ) {
+      if (authorized || prediction === "authorized person") {
+        // AUTHORIZED PERSON
+        stopAlarm();
+
+        setSirenReason(
+          "Authorized person detected. Siren disabled."
+        );
+
+        setThreatLevel("SAFE");
+
+        return;
+      }
+
+      // UNKNOWN / UNAUTHORIZED PERSON
+      playAlarm();
+
+      setSirenReason(
+        "Unknown or unauthorized person detected."
+      );
+
+      if (confidence >= 0.9) {
+        setThreatLevel("HIGH");
+      } else if (confidence >= 0.7) {
+        setThreatLevel("MEDIUM");
+      } else {
+        setThreatLevel("LOW");
+      }
+
+      return;
+    }
+
+    // -----------------------------------------------
+    // WEAPONS / THREATS
+    // -----------------------------------------------
+
+    const threatObjects = [
+      "gun",
+      "pistol",
+      "rifle",
+      "weapon",
+      "knife",
+      "firearm",
+      "bomb",
+      "explosive",
+      "grenade",
+      "tank",
+      "soldier",
+      "threat"
+    ];
+
+    const isThreat =
+      threatObjects.some((item) =>
+        prediction.includes(item)
+      );
+
+    if (isThreat) {
+      playAlarm();
+
+      setSirenReason(
+        `Threat detected: ${data.prediction}`
+      );
+
+      if (confidence >= 0.9) {
+        setThreatLevel("HIGH");
+      } else if (confidence >= 0.7) {
+        setThreatLevel("MEDIUM");
+      } else {
+        setThreatLevel("LOW");
+      }
+
+      return;
+    }
+
+    // -----------------------------------------------
+    // NORMAL OBJECT
+    // -----------------------------------------------
+
+    stopAlarm();
+
+    setSirenReason("");
+
+    setThreatLevel("SAFE");
+  };
+
+  // --------------------------------------------------
+  // START LOCAL CAMERA
+  // --------------------------------------------------
+
+  const startLocalCamera = async () => {
     try {
-
       const stream =
         await navigator.mediaDevices.getUserMedia({
-
           video: true,
           audio: false
-
         });
 
       streamRef.current = stream;
@@ -78,40 +227,96 @@ export default function Webcam() {
 
       setCameraOn(true);
 
-      timerRef.current = setInterval(() => {
-
-        detectFrame();
-
-      }, 3000);
-
+      startDetectionLoop();
     } catch (err) {
+      console.error(err);
 
-      console.log(err);
-
-      alert("Camera Permission Denied");
-
+      alert(
+        "Camera permission denied or camera unavailable."
+      );
     }
-
   };
 
-  const stopCamera = () => {
+  // --------------------------------------------------
+  // IP CAMERA
+  // --------------------------------------------------
 
+  const startIPCamera = () => {
+    if (!ipCameraUrl.trim()) {
+      alert("Enter IP camera URL");
+
+      return;
+    }
+
+    /*
+      IMPORTANT:
+
+      A browser normally cannot directly open an RTSP URL.
+
+      Example:
+
+      rtsp://192.168.1.100:554/stream
+
+      must first be converted by the backend into
+      HTTP/HLS/WebRTC/MJPEG.
+
+      Therefore this URL is sent to the backend.
+    */
+
+    API.post("/webcam/ip-camera/start", {
+      url: ipCameraUrl
+    })
+      .then((response) => {
+        console.log(
+          "IP camera started:",
+          response.data
+        );
+
+        setCameraOn(true);
+
+        startDetectionLoop();
+      })
+      .catch((error) => {
+        console.error(
+          "IP Camera Error:",
+          error
+        );
+
+        alert(
+          "Unable to connect to IP camera."
+        );
+      });
+  };
+
+  // --------------------------------------------------
+  // START CAMERA
+  // --------------------------------------------------
+
+  const startCamera = async () => {
+    if (cameraSource === "local") {
+      await startLocalCamera();
+    } else {
+      startIPCamera();
+    }
+  };
+
+  // --------------------------------------------------
+  // STOP CAMERA
+  // --------------------------------------------------
+
+  const stopCamera = () => {
     stopAlarm();
 
     if (timerRef.current) {
-
       clearInterval(timerRef.current);
 
       timerRef.current = null;
-
     }
 
     if (streamRef.current) {
-
       streamRef.current
         .getTracks()
-        .forEach(track => track.stop());
-
+        .forEach((track) => track.stop());
     }
 
     streamRef.current = null;
@@ -122,38 +327,57 @@ export default function Webcam() {
 
     setThreatLevel("SAFE");
 
-  };
-  const detectFrame = async () => {
+    setSiren(false);
 
-    if (processingRef.current) return;
+    setSirenReason("");
+  };
+
+  // --------------------------------------------------
+  // DETECTION LOOP
+  // --------------------------------------------------
+
+  const startDetectionLoop = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+
+    timerRef.current = setInterval(() => {
+      detectFrame();
+    }, 2000);
+  };
+
+  // --------------------------------------------------
+  // CAPTURE FRAME
+  // --------------------------------------------------
+
+  const detectFrame = async () => {
+    if (processingRef.current) {
+      return;
+    }
 
     processingRef.current = true;
 
-    if (!videoRef.current) {
+    const video = videoRef.current;
 
+    if (!video) {
       processingRef.current = false;
 
       return;
-
     }
-
-    const video = videoRef.current;
 
     if (
       video.videoWidth === 0 ||
       video.videoHeight === 0
     ) {
-
       processingRef.current = false;
 
       return;
-
     }
 
-    const canvas = document.createElement("canvas");
+    const canvas =
+      document.createElement("canvas");
 
     canvas.width = video.videoWidth;
-
     canvas.height = video.videoHeight;
 
     const ctx = canvas.getContext("2d");
@@ -166,146 +390,151 @@ export default function Webcam() {
       canvas.height
     );
 
-    canvas.toBlob(async (blob) => {
+    canvas.toBlob(
+      async (blob) => {
+        if (!blob) {
+          processingRef.current = false;
 
-      if (!blob) {
-
-        processingRef.current = false;
-
-        return;
-
-      }
-
-      const formData = new FormData();
-
-      formData.append(
-        "file",
-        blob,
-        "webcam.jpg"
-      );
-
-      try {
-
-        setLoading(true);
-
-        const response = await API.post(
-
-          "/prediction/predict",
-
-          formData,
-
-          {
-
-            headers: {
-
-              "Content-Type":
-                "multipart/form-data"
-
-            }
-
-          }
-
-        );
-
-        console.log("Prediction:", response.data);
-
-        setResult(response.data);
-
-        const prediction =
-          response.data.prediction?.toLowerCase();
-
-        const confidence =
-          response.data.confidence;
-
-        const threatObjects = [
-
-          "person",
-
-          "gun",
-
-          "knife",
-
-          "weapon",
-
-          "rifle",
-
-          "soldier",
-
-          "vehicle",
-
-          "tank"
-
-        ];
-
-        if (
-          prediction &&
-          threatObjects.includes(prediction)
-        ) {
-
-          playAlarm();
-
-          if (confidence >= 0.90) {
-
-            setThreatLevel("HIGH");
-
-          } else if (confidence >= 0.70) {
-
-            setThreatLevel("MEDIUM");
-
-          } else {
-
-            setThreatLevel("LOW");
-
-          }
-
-        } else {
-
-          stopAlarm();
-
-          setThreatLevel("SAFE");
-
+          return;
         }
 
-      } catch (err) {
+        const formData = new FormData();
 
-        console.log("Detection Error:", err);
+        formData.append(
+          "file",
+          blob,
+          "webcam.jpg"
+        );
 
-      } finally {
+        try {
+          setLoading(true);
 
-        processingRef.current = false;
+          const response =
+            await API.post(
+              "/prediction/predict",
+              formData,
+              {
+                headers: {
+                  "Content-Type":
+                    "multipart/form-data"
+                }
+              }
+            );
 
-        setLoading(false);
+          console.log(
+            "Webcam Prediction:",
+            response.data
+          );
 
-      }
+          setResult(response.data);
 
-    }, "image/jpeg");
+          processThreat(response.data);
 
+        } catch (error) {
+          console.error(
+            "Detection Error:",
+            error
+          );
+        } finally {
+          processingRef.current = false;
+
+          setLoading(false);
+        }
+      },
+      "image/jpeg",
+      0.75
+    );
   };
- useEffect(() => {
 
+  // --------------------------------------------------
+  // CLEANUP
+  // --------------------------------------------------
+
+  useEffect(() => {
     return () => {
-
       stopCamera();
-
     };
-
   }, []);
 
-  return (
+  // --------------------------------------------------
+  // UI
+  // --------------------------------------------------
 
-    <Container maxWidth="lg" sx={{ mt: 4 }}>
+  return (
+    <Container
+      maxWidth="lg"
+      sx={{ mt: 4 }}
+    >
 
       <Typography
         variant="h4"
         fontWeight="bold"
         gutterBottom
       >
-        AI Webcam Surveillance
+        AI CCTV Surveillance
       </Typography>
 
-      <Card elevation={6} sx={{ mt: 2 }}>
+      <Card
+        elevation={6}
+        sx={{ mt: 2 }}
+      >
 
         <CardContent>
+
+          {/* CAMERA SOURCE */}
+
+          <Box
+            sx={{
+              display: "flex",
+              gap: 2,
+              mb: 3
+            }}
+          >
+
+            <TextField
+              select
+              label="Camera Source"
+              value={cameraSource}
+              onChange={(e) =>
+                setCameraSource(
+                  e.target.value
+                )
+              }
+              sx={{ minWidth: 220 }}
+              disabled={cameraOn}
+            >
+
+              <MenuItem value="local">
+                Laptop Camera
+              </MenuItem>
+
+              <MenuItem value="ip">
+                IP / CCTV Camera
+              </MenuItem>
+
+            </TextField>
+
+          </Box>
+
+          {/* IP CAMERA URL */}
+
+          {cameraSource === "ip" && (
+            <TextField
+              fullWidth
+              label="IP Camera URL"
+              placeholder="http://192.168.1.100:8080/video"
+              value={ipCameraUrl}
+              onChange={(e) =>
+                setIpCameraUrl(
+                  e.target.value
+                )
+              }
+              disabled={cameraOn}
+              sx={{ mb: 3 }}
+            />
+          )}
+
+          {/* VIDEO */}
 
           <video
             ref={videoRef}
@@ -314,10 +543,17 @@ export default function Webcam() {
             muted
             width="100%"
             style={{
+              minHeight: 400,
+              background: "#000",
               borderRadius: 12,
-              border: "3px solid #1976d2"
+              border:
+                siren
+                  ? "5px solid red"
+                  : "3px solid #1976d2"
             }}
           />
+
+          {/* CAMERA BUTTON */}
 
           <Box
             sx={{
@@ -334,7 +570,7 @@ export default function Webcam() {
                 color="primary"
                 onClick={startCamera}
               >
-                Start Camera
+                Start Surveillance
               </Button>
 
             ) : (
@@ -344,18 +580,67 @@ export default function Webcam() {
                 color="error"
                 onClick={stopCamera}
               >
-                Stop Camera
+                Stop Surveillance
               </Button>
 
             )}
 
           </Box>
 
+          {/* LOADING */}
+
           <Box sx={{ mt: 3 }}>
 
-            {loading && <CircularProgress />}
+            {loading && (
+              <>
+                <CircularProgress />
+
+                <Typography sx={{ mt: 1 }}>
+                  AI scanning CCTV frame...
+                </Typography>
+              </>
+            )}
 
           </Box>
+
+          {/* SIREN STATUS */}
+
+          <Box sx={{ mt: 3 }}>
+
+            {siren ? (
+
+              <Alert
+                severity="error"
+                sx={{
+                  fontWeight: "bold",
+                  fontSize: 18
+                }}
+              >
+                🚨 SIREN ACTIVE
+                <br />
+                {sirenReason}
+              </Alert>
+
+            ) : (
+
+              <Alert severity="success">
+
+                🔇 SIREN OFF
+
+                {sirenReason && (
+                  <>
+                    <br />
+                    {sirenReason}
+                  </>
+                )}
+
+              </Alert>
+
+            )}
+
+          </Box>
+
+          {/* RESULT */}
 
           {result && (
 
@@ -364,52 +649,74 @@ export default function Webcam() {
               {threatLevel === "SAFE" ? (
 
                 <Alert severity="success">
-                  ✅ No Threat Detected
+                  ✅ SYSTEM SAFE
                 </Alert>
 
               ) : (
 
-                <>
-                  <Alert
-                    severity="error"
-                    sx={{
-                      fontWeight: "bold",
-                      fontSize: 20,
-                      animation: "blink 1s infinite"
-                    }}
-                  >
-                    🚨 HIGH THREAT DETECTED 🚨
-                  </Alert>
+                <Alert severity="error">
 
-                  <style>{`
-                    @keyframes blink{
-                      0%{background:#ff1744;color:white;}
-                      50%{background:white;color:#ff1744;}
-                      100%{background:#ff1744;color:white;}
-                    }
-                  `}</style>
-                </>
+                  🚨 THREAT DETECTED
+
+                </Alert>
 
               )}
-               <Typography
+
+              <Typography
                 variant="h6"
                 sx={{ mt: 2 }}
               >
-                Detection :
+
+                Detection:
                 {" "}
                 {result.prediction}
+
               </Typography>
 
-              <Typography sx={{ mt: 1 }}>
-                Confidence :
+              {/* AUTHORIZATION */}
+
+              {result.prediction
+                ?.toLowerCase()
+                .includes("person") && (
+
+                <Chip
+                  sx={{ mt: 2 }}
+                  color={
+                    isAuthorizedPerson(result)
+                      ? "success"
+                      : "error"
+                  }
+                  label={
+                    isAuthorizedPerson(result)
+                      ? "AUTHORIZED PERSON"
+                      : "UNKNOWN / UNAUTHORIZED PERSON"
+                  }
+                />
+
+              )}
+
+              <Typography sx={{ mt: 2 }}>
+
+                Confidence:
                 {" "}
-                {(result.confidence * 100).toFixed(2)}%
+                {(
+                  Number(result.confidence) *
+                  100
+                ).toFixed(2)}
+                %
+
               </Typography>
 
               <LinearProgress
                 variant="determinate"
-                value={result.confidence * 100}
-                sx={{ mt: 1, height: 10 }}
+                value={
+                  Number(result.confidence) *
+                  100
+                }
+                sx={{
+                  mt: 1,
+                  height: 10
+                }}
               />
 
               <Typography
@@ -426,32 +733,20 @@ export default function Webcam() {
                       : "green"
                 }}
               >
-                Threat Level : {threatLevel}
+
+                Threat Level:
+                {" "}
+                {threatLevel}
+
               </Typography>
 
               <Typography sx={{ mt: 1 }}>
-                Time :
+
+                Time:
                 {" "}
                 {new Date().toLocaleTimeString()}
-              </Typography>
 
-              <Chip
-                sx={{ mt: 2 }}
-                color={
-                  threatLevel === "HIGH"
-                    ? "error"
-                    : threatLevel === "MEDIUM"
-                    ? "warning"
-                    : threatLevel === "LOW"
-                    ? "secondary"
-                    : "success"
-                }
-                label={
-                  threatLevel === "SAFE"
-                    ? "SYSTEM SAFE"
-                    : "SURVEILLANCE ACTIVE"
-                }
-              />
+              </Typography>
 
             </Box>
 
@@ -462,7 +757,5 @@ export default function Webcam() {
       </Card>
 
     </Container>
-
   );
-
 }
