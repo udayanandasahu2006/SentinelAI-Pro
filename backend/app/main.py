@@ -12,9 +12,9 @@ from app.routers.webcam import router as webcam_router
 from app.routers.report import router as report_router
 from app.database.database import engine
 from app.database.models import Base
-from app.routers.authorized import router as authorized_router
+
 from app.routers.cameras import router as cameras_router
-from app.routers.siren import router as siren_router
+
 from app.routers.admin import router as admin_router
 from app.database.migrate import migrate_database
 app = FastAPI(
@@ -64,7 +64,7 @@ Base.metadata.create_all(bind=engine)
 
 # Update existing database schema
 migrate_database()
-app.include_router(authorized_router)
+
 app.include_router(cameras_router)
-app.include_router(siren_router)
+
 app.include_router(admin_router)
