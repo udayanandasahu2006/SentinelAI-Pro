@@ -28,7 +28,11 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",
         "http://127.0.0.1:5173",
+
+        # Vercel production
         "https://sentinel-ai-pro-ten.vercel.app",
+
+        # Current Vercel deployment
         "https://sentinel-ai-9dk5yhhat-udayanandasahu2006s-projects.vercel.app",
     ],
     allow_credentials=True,
