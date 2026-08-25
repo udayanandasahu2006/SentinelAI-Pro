@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "https://sentinel-ai-pro.onrender.com",
+  baseURL: "https://sentinelai-pro.onrender.com",
 });
 
 export default API;
